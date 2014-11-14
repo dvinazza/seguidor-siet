@@ -50,7 +50,7 @@ for cuig in tramites.keys():
     for img in soup.findAll('img'):
         if img.has_attr("src") and "Mapa" in img['src']:
             if img['src'] != tramites[cuig]['paso']:
-                hubo_cambios = 1
+                hubo_cambios += 1
                 tramites[cuig]['paso'] = img['src']
                 tramites[cuig]['estado'] = estados[img['src']]
 
