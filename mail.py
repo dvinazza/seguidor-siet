@@ -8,6 +8,7 @@ from credenciales import usuario, clave
 
 
 def verificarCorreo(correo):
+    print correo
     return validate_email(correo, verify=True)
 
 

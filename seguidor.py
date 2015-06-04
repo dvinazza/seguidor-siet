@@ -37,27 +37,45 @@ http = connection_from_url(base_url, maxsize=2)
 
 try:
     tramites = load(open("tramites.pickle", 'rb'))
+    #print tramites
 except:
     exit("No se pudo leer el archivo de tramites")
 
 
 hubo_cambios = 0
 for cuig in tramites.keys():
-    print "Investigando el estado de %s" % cuig
+    alerta = 0
+    print "Investigando el estado de %s (%s)" % (cuig, tramites[cuig]['mail'])
     html = http.request('GET', cuigToURL(cuig))
-    soup = BeautifulSoup(html.data)
 
-    for img in soup.findAll('img'):
-        if img.has_attr("src") and "Mapa" in img['src']:
-            if img['src'] != tramites[cuig]['paso']:
-                hubo_cambios += 1
-                tramites[cuig]['paso'] = img['src']
-                tramites[cuig]['estado'] = estados[img['src']]
+    if "IMPORTANTE:" in html.data:
+        if tramites[cuig]['paso'] != "ALERTA":
+            hubo_cambios += 1
+            tramites[cuig]['paso'] = "ALERTA"
+            tramites[cuig]['estado'] = "DETENIDO"
 
-                print "Avanzo %s! (%s)" % (tramites[cuig]['desc'],
-                                           estados[img['src']])
+            print "Alerta %s! (%s)" % (tramites[cuig]['desc'], \
+                                       tramites[cuig]['estado'])
 
-                enviarNotificacion(tramites[cuig], html.data)
+            enviarNotificacion(tramites[cuig], html.data)
+
+    else:
+        soup = BeautifulSoup(html.data)
+        div = soup.find('div', {'name': "Interface SIET"})
+
+        for img in div.findAll('img'):
+            if img.has_attr("src") and "Mapa" in img['src']:
+                if img['src'] != tramites[cuig]['paso']:
+                    hubo_cambios += 1
+
+                    tramites[cuig]['paso'] = img['src']
+                    tramites[cuig]['estado'] = estados[img['src']]
+
+                    print "Avanzo %s! (%s)" % (tramites[cuig]['desc'],
+                                               estados[img['src']])
+                else:
+                    print "Sigue en el mismo sitio %s (%s)" % \
+                    (tramites[cuig]['desc'], estados[img['src']])
 
 if hubo_cambios:
     dump(tramites, open(archivo_pickle, 'wb'))
